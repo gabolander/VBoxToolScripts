@@ -1,0 +1,521 @@
+#!/bin/bash
+
+#  -------------------------------------------------------------------
+#
+#  Shell program to Bash Script Template.
+#
+#  Copyright 2011, Comune di Rimini <comune@Gabodesktop>.
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License as
+#  published by the Free Software Foundation; either version 2 of the
+#  License, or (at your option) any later version. 
+#
+#  This program is distributed in the hope that it will be useful, but
+#  WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+#  General Public License for more details.
+#
+#  Description:
+#
+#
+#  NOTE: You must be the superuser to run this script.
+#  (WARNING!: Contains security info.  Do not set world-readable.)
+#
+#  Usage:
+#
+#    script_tpl_1.sh [ -h | --help ] [-a] [-b argom]
+#
+#  Options:
+#
+#    -h, --help  Display this help message and exit.
+#    -a              opzione senza argomenti
+#    -b  argom       opzione con argomento
+#
+#
+#  Revision History:
+#
+#  04/07/2011  Start date
+#
+#  -------------------------------------------------------------------
+
+
+#  -------------------------------------------------------------------
+#  Constants
+#  -------------------------------------------------------------------
+
+# Impostazione di lingua
+  LANG=it_IT.UTF-8
+  export LANG
+
+  PROGNAME=$(basename $0)
+  PRG=`basename $0 .sh`  # senza eventuale .sh
+  VERSION="0.0.1"
+  VER="1.0"
+  LAST_UPD="17-11-2006"
+  COL_UL=`tput smul`
+  COL_BLINK=`tput blink`
+  ACTDIR=`pwd`
+  SCRIPTDIR=$(dirname $0)
+  OGGI=`date +%Y%m%d`
+  OGGI_ITA=`date +%d-%m-%Y`
+  ORA_ITA=`date +%H:%M:%S`
+  if [ -z "$HOSTNAME" ]; then
+    HOSTNAME=`hostname`
+  fi 
+
+#  -------------------------------------------------------------------
+#  Base Variables
+#  -------------------------------------------------------------------
+#  TMPDIR=`mktemp -q -d /tmp/${PRG}_temp_dir_XXXXX`
+  LOGDIR="/var/log"
+  LOGFILE="${LOGDIR}/${PRG}.log"
+#  TEMPORANEI="$TMPDIR"
+
+#  -------------------------------------------------------------------
+#  Standard Functions
+#  -------------------------------------------------------------------
+
+
+function clean_up
+{
+
+#  -----------------------------------------------------------------------
+#  Function to remove temporary files and other housekeeping
+#    No arguments
+#  -----------------------------------------------------------------------
+
+#  rm -f ${TEMP_FILE1}
+#  rm -rf ${TEMPORANEI}
+  rm -rf ${TMPDIR}
+}
+
+
+function error_exit
+{
+
+#  -----------------------------------------------------------------------
+#  Function for exit due to fatal program error
+#    Accepts 1 argument:
+#      string containing descriptive error message
+#  -----------------------------------------------------------------------
+
+
+  echo "${PROGNAME}: ${1:-"Unknown Error"}" >&2
+  clean_up
+  exit 1
+}
+
+
+function graceful_exit
+{
+
+#  -----------------------------------------------------------------------
+#  Function called for a graceful exit
+#    No arguments
+#  -----------------------------------------------------------------------
+
+  clean_up
+  exit $1
+}
+
+
+function signal_exit
+{
+
+#  -----------------------------------------------------------------------
+#  Function to handle termination signals
+#    Accepts 1 argument:
+#      signal_spec
+#  -----------------------------------------------------------------------
+
+  case $1 in
+    INT)  echo "$PROGNAME: Program aborted by user" >&2
+      clean_up
+      exit
+      ;;
+    TERM)  echo "$PROGNAME: Program terminated" >&2
+      clean_up
+      exit
+      ;;
+    *)  error_exit "$PROGNAME: Terminating on unknown signal"
+      ;;
+  esac
+}
+
+
+function make_temp_files
+{
+
+#  -----------------------------------------------------------------------
+#  Function to create temporary files
+#    No arguments
+#  -----------------------------------------------------------------------
+
+  # Use user's local tmp directory if it exists
+
+  if [ -d ~/tmp ]; then
+    TEMP_DIR=~/tmp
+  else
+    TEMP_DIR=/tmp
+  fi
+
+  # Temp file for this script, using paranoid method of creation to
+  # insure that file name is not predictable.  This is for security to
+  # avoid "tmp race" attacks.  If more files are needed, create using
+  # the same form.
+
+  TMPDIR=$(mktemp -q -d "${TEMP_DIR}/${PROGNAME}.$$.XXXXXX")
+  if [ "$TMPDIR" = "" ]; then
+    error_exit "cannot create temp file!"
+  fi
+  TEMP_FILE1="$TMPDIR/tmp_file1"
+  TEMP_FILE2="$TMPDIR/tmp_file2"
+  TEMP_FILE3="$TMPDIR/tmp_file3"
+}
+
+
+function usage
+{
+
+#  -----------------------------------------------------------------------
+#  Function to display usage message (does not exit)
+#    No arguments
+#  -----------------------------------------------------------------------
+
+  echo "Usage: ${PROGNAME} [OPTIONS ...] [FILE]..."
+  echo "       type '${PROGNAME} -h' for more help"
+}
+
+
+function helptext
+{
+
+#  -----------------------------------------------------------------------
+#  Function to display help message for program
+#    No arguments
+#  -----------------------------------------------------------------------
+
+  local tab=$(echo -en "\t\t")
+
+### Informazioni complete di help
+#   ${PROGNAME} ver. ${VERSION}
+#   This is a program to Bash Script Template.
+# 
+#   $(usage)
+# 
+#   Options:
+# 
+#   -h, --help  Display this help message and exit.
+#   -a              opzione senza argomenti
+#   -b  argom       opzione con argomento
+# 
+#   NOTE: You must be the superuser to run this script.
+#   WARNING!: Contains security info.  Do not set world-readable.
+
+#   cat <<- -EOF-
+# 
+# 	${PROGNAME} ver. ${VERSION}
+# 	This is a program to Bash Script Template.
+# 
+# 	$(usage)
+# 
+# 	OPTIONS:
+# 
+# 	-h, --help                  Display this help message and exit.
+# 	-S, --simulate              Simulate operation, but does nothing
+# 	-s [arg], --savelast [arg]  Save last "arg" days. Arg is optional, and
+# 	                            if not specified, default is 4.
+# 	-B arg, --backup-dir arg    Specify dir where to save backup. argument
+# 	                            is required.
+# 
+# -EOF-
+
+  cat <<- -EOF-
+
+	${PROGNAME} ver. ${VERSION}
+	This is a program to Bash Script Template.
+
+	$(usage)
+
+	OPTIONS:
+
+	-h, --help                  Display this help message and exit.
+-EOF-
+}
+
+
+function root_check
+{
+  #####
+  #  Function to check if user is root
+  #  No arguments
+  #####
+
+  if [ "$(id | sed 's/uid=\([0-9]*\).*/\1/')" != "0" ]; then
+    error_exit "You must be the superuser to run this script."
+  fi
+}
+
+function sino()
+{
+  SINO=""
+  DEF=""
+  TMP=""
+  MSG=`echo "$1" | cut -c1`
+  if [ "$MSG" = "-" ]; then
+    MSG=""
+  else
+    MSG="$1"
+  fi
+
+  if [ -z "$2" ]; then
+    TMP="$1"
+  else
+    TMP="$2"
+  fi
+  TMP=`echo $TMP | tr [:lower:] [:upper:]`
+  DEF=`echo $TMP | cut -c2`
+
+  echo -n "$1 :"
+  while [ "$SINO" != "S" -a  "$SINO" != "N" ]; do
+    read SINO
+    [ -z "$SINO" ] && SINO=$DEF
+    SINO=`echo $SINO | tr [:lower:] [:upper:]`
+  done
+}
+
+function proseguo()
+{
+  local RISP=""
+  while [ "$RISP" != "S" ]; do
+    echo -ne "\n Proseguo ('S' per Si, CTRL+C per interrompere) : "
+    read RISP
+#   RISP=`echo $RISP | tr [:lower:] [:upper:]`
+  done
+}
+
+function pinvio()
+{
+  echo -ne "\n Premere [INVIO] per continuare. "
+  read RISP
+  echo " "
+}
+
+function valuta_parametri() {
+# Si raccoglie la stringa generata da getopt.
+
+STRINGA_ARGOMENTI=`getopt -o hB:s::S -l help,backup-dir:,backup-directory:,savelast::,simulate -- "$@"`
+
+# Inizializzazione parametri di default
+SIMULATE=""
+SAVELAST=""
+BACKUP_USER_DIR=""
+
+# Si trasferisce nei parametri $1, $2,...
+eval set -- "$STRINGA_ARGOMENTI"
+
+while true ; do
+    case "$1" in
+        -h|--help)
+            shift
+            helptext
+            graceful_exit
+            ;;
+        -S|--simulate)
+            shift
+            SIMULATE="Yes"
+            ;;
+        -B|--backup-dir*)
+            # echo "Opzione b, argomento «$2»" # debug
+            [ -z "$2" ] && graceful_exit 99
+            BACKUP_USER_DIR="$2"
+            shift 2
+            ;;
+        -s|--savelast)
+            case "$2" in
+              "") echo "Opzione s/savelast, senza argomenti" # debug
+                  shift 2
+                  graceful_exit 1 # ecc. ecc.
+                  ;;
+              *)  
+                  SAVELAST="$2" # ecc..
+                  shift 2
+                  ;;
+            esac
+            ;;
+        --) shift
+            break
+            ;;
+        *)  echo "Errore imprevisto!"
+            exit 1
+            ;;
+        esac
+done
+
+# ARG_RESTANTI="$@"
+ARG_RESTANTI=()
+for i in `seq 1 $#`
+do
+    eval a=\$$i
+#    echo "$i) $a"
+    ARG_RESTANTI[$i]="$a"
+done
+
+# [ -z "$ARG_RESTANTI" ] && help "$PRG: ${COL_LTRED}ERRORE${COL_RESET}: pochi parametri!\n" 99
+}
+
+
+#  -------------------------------------------------------------------
+#  Custom Functions - Da qui le funzioni personalizzate per questo 
+#                    script
+#  -------------------------------------------------------------------
+
+function funzione_tpl
+{
+#  ------------------------------------------------------------------------
+#  uso della funzione:
+#    Arguments:
+#      1  arg1 (required)
+#      2  arg2 (optional)
+#  ------------------------------------------------------------------------
+
+  # Fatal error if required arguments are missing
+
+  if [ "$1" = "" ]; then 
+    error_exit "funzione_tpl: missing argument 1"
+  fi
+
+  # Function Logic here
+
+  return
+}  # end of funzione_tpl
+
+
+#  -------------------------------------------------------------------
+#  Program starts here
+#  -------------------------------------------------------------------
+
+##### Initialization And Setup #####
+
+# Set file creation mask so that all files are created with 600 permissions.
+
+umask 066
+# Eventuale root_check
+# root_check
+
+# Trap TERM, HUP, and INT signals and properly exit
+
+trap "signal_exit TERM" TERM HUP
+trap "signal_exit INT"  INT
+
+# Create temporary file(s)
+
+make_temp_files
+
+
+##### Command Line Processing #####
+
+if [ "$1" = "--help" ]; then
+  helptext
+  graceful_exit
+fi
+# Posso usare questa chiamata per gli argomenti
+#  oppure quello + semplice che si vede dopo
+# valuta_parametri $@
+#  -- se uso questa, alla fine ho i parametri restanti in : $ARG_RESTANTI
+valuta_parametri $@
+
+##### Main Logic #####
+
+# echo "Arg restanti = $@"
+# echo "arg a = $varopt_a, arg b = $varopt_b, arg c = $varopt_c"
+
+LISTRUNNINGVMS_COMMAND="/usr/bin/VBoxManage list runningvms "
+
+# echo "Arg restanti = " ${ARG_RESTANTI[*]} "(" ${#ARG_RESTANTI[*]} ")"
+# echo "SIMULATE=$SIMULATE SAVELAST=$SAVELAST BACKUP_USER_DIR=$BACKUP_USER_DIR"
+
+runningvms=`$LISTRUNNINGVMS_COMMAND | wc -l`
+if [ $runningvms -eq 0 ]; then
+	echo "$PRG: error: No running VirtualMachine found."
+	graceful_exit
+fi
+
+params=${#ARG_RESTANTI[*]} 
+
+$LISTRUNNINGVMS_COMMAND \
+		| sed "s/ {.*//" | cut -c2- | rev | cut -c2- | rev \
+				> $TEMP_FILE1
+# if [ $params -eq 0 ]; then
+	# dai lista macchine e fai scegliere ....
+	:
+	vms=()
+	ciclo=0
+	while read line
+	do
+		vms[$ciclo]="$line"
+		((ciclo++))
+	done < $TEMP_FILE1
+
+	# wc -l $TEMP_FILE1
+	# echo ${#vms[@]}
+
+
+	# GABODebug - inizio
+	echo "Ecco le macchine"
+	for ((i=0;i<${#vms[@]};i++))
+	do
+		echo $((i+1))") " ${vms[$i]}
+	done
+	echo
+	# GABODebug - fine
+# fi
+risp=""
+numvm=${#vms[@]}
+while [ -z "$risp" ]
+do
+	echo -ne "Numero VM (0=esce) : "
+	read risp
+
+	if [ "$risp" = "0" ]; then
+		graceful_exit
+		break
+	fi
+
+	echo -n $risp | sed "s/\s*//g" | grep -Pq "\d+"
+	isnum=$?
+	echo -n $risp | sed "s/\s*//g" | grep -Pq "\D+"
+	isalp=$?
+
+	# echo isnum = $isnum
+	# echo isalp = $isalp
+
+	if [ $isnum -eq 0  -a  $isalp -ne 0 ]; then # Ok son solo cifre numeriche
+		scelta=$((risp+0))
+	else
+		echo "Errore: la scelta deve contenere solo cifre numeriche."
+		echo
+		risp=""
+		continue
+	fi
+
+
+	if [ $scelta -gt $numvm -o $scelta -lt 1 ]; then
+		echo "Scelta fuori dal range consentito. (1-$numvm)"
+		echo
+		risp=""
+		continue
+	fi
+
+	[ $scelta -gt 0 ] && ((scelta--))
+	vmname="${vms[$scelta]}"
+done
+
+# VBoxManage guestproperty enumerate <vmname>"
+property=`VBoxManage guestproperty enumerate "$vmname" | grep -io "/.*Net.*v4.*Ip"`
+# .... es .... VBoxManage guestproperty get <vmname> "/VirtualBox/GuestInfo/Net/0/V4/IP"
+# VBoxManage guestproperty get "$vmname"  "/VirtualBox/GuestInfo/Net/0/V4/IP"
+VBoxManage guestproperty get "$vmname"  "$property"
+
+graceful_exit
