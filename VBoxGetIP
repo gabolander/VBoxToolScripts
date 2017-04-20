@@ -4,7 +4,7 @@
 #
 #  Shell program to Bash Script Template.
 #
-#  Copyright 2011, Comune di Rimini <comune@Gabodesktop>.
+#  Copyright 2016, <gabodevelop@gmail.com>.
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License as
@@ -29,13 +29,10 @@
 #  Options:
 #
 #    -h, --help  Display this help message and exit.
-#    -a              opzione senza argomenti
-#    -b  argom       opzione con argomento
-#
 #
 #  Revision History:
 #
-#  04/07/2011  Start date
+#  04/07/2016  Start date
 #
 #  -------------------------------------------------------------------
 
@@ -67,10 +64,8 @@
 #  -------------------------------------------------------------------
 #  Base Variables
 #  -------------------------------------------------------------------
-#  TMPDIR=`mktemp -q -d /tmp/${PRG}_temp_dir_XXXXX`
   LOGDIR="/var/log"
   LOGFILE="${LOGDIR}/${PRG}.log"
-#  TEMPORANEI="$TMPDIR"
 
 #  -------------------------------------------------------------------
 #  Standard Functions
@@ -85,8 +80,6 @@ function clean_up
 #    No arguments
 #  -----------------------------------------------------------------------
 
-#  rm -f ${TEMP_FILE1}
-#  rm -rf ${TEMPORANEI}
   rm -rf ${TMPDIR}
 }
 
@@ -109,12 +102,10 @@ function error_exit
 
 function graceful_exit
 {
-
 #  -----------------------------------------------------------------------
 #  Function called for a graceful exit
 #    No arguments
 #  -----------------------------------------------------------------------
-
   clean_up
   exit $1
 }
@@ -122,13 +113,6 @@ function graceful_exit
 
 function signal_exit
 {
-
-#  -----------------------------------------------------------------------
-#  Function to handle termination signals
-#    Accepts 1 argument:
-#      signal_spec
-#  -----------------------------------------------------------------------
-
   case $1 in
     INT)  echo "$PROGNAME: Program aborted by user" >&2
       clean_up
@@ -146,12 +130,6 @@ function signal_exit
 
 function make_temp_files
 {
-
-#  -----------------------------------------------------------------------
-#  Function to create temporary files
-#    No arguments
-#  -----------------------------------------------------------------------
-
   # Use user's local tmp directory if it exists
 
   if [ -d ~/tmp ]; then
@@ -198,43 +176,11 @@ function helptext
 
   local tab=$(echo -en "\t\t")
 
-### Informazioni complete di help
-#   ${PROGNAME} ver. ${VERSION}
-#   This is a program to Bash Script Template.
-# 
-#   $(usage)
-# 
-#   Options:
-# 
-#   -h, --help  Display this help message and exit.
-#   -a              opzione senza argomenti
-#   -b  argom       opzione con argomento
-# 
-#   NOTE: You must be the superuser to run this script.
-#   WARNING!: Contains security info.  Do not set world-readable.
-
-#   cat <<- -EOF-
-# 
-# 	${PROGNAME} ver. ${VERSION}
-# 	This is a program to Bash Script Template.
-# 
-# 	$(usage)
-# 
-# 	OPTIONS:
-# 
-# 	-h, --help                  Display this help message and exit.
-# 	-S, --simulate              Simulate operation, but does nothing
-# 	-s [arg], --savelast [arg]  Save last "arg" days. Arg is optional, and
-# 	                            if not specified, default is 4.
-# 	-B arg, --backup-dir arg    Specify dir where to save backup. argument
-# 	                            is required.
-# 
-# -EOF-
 
   cat <<- -EOF-
 
 	${PROGNAME} ver. ${VERSION}
-	This is a program to Bash Script Template.
+	This is a script to read IP address of a running VM.
 
 	$(usage)
 
@@ -297,7 +243,7 @@ function proseguo()
 
 function pinvio()
 {
-  echo -ne "\n Premere [INVIO] per continuare. "
+  echo -ne "\n Press [ENTER] to continue. "
   read RISP
   echo " "
 }
@@ -463,7 +409,7 @@ $LISTRUNNINGVMS_COMMAND \
 
 
 	# GABODebug - inizio
-	echo "Ecco le macchine"
+	echo "Here are VMs:"
 	for ((i=0;i<${#vms[@]};i++))
 	do
 		echo $((i+1))") " ${vms[$i]}
@@ -475,7 +421,7 @@ risp=""
 numvm=${#vms[@]}
 while [ -z "$risp" ]
 do
-	echo -ne "Numero VM (0=esce) : "
+	echo -ne "VM Number (0=exit) : "
 	read risp
 
 	if [ "$risp" = "0" ]; then
@@ -494,7 +440,7 @@ do
 	if [ $isnum -eq 0  -a  $isalp -ne 0 ]; then # Ok son solo cifre numeriche
 		scelta=$((risp+0))
 	else
-		echo "Errore: la scelta deve contenere solo cifre numeriche."
+		echo "Error: choice must be numeric."
 		echo
 		risp=""
 		continue
@@ -502,7 +448,7 @@ do
 
 
 	if [ $scelta -gt $numvm -o $scelta -lt 1 ]; then
-		echo "Scelta fuori dal range consentito. (1-$numvm)"
+		echo "Value is out of the allowed range. (1-$numvm)"
 		echo
 		risp=""
 		continue
