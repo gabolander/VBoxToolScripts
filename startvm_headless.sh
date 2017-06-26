@@ -5,8 +5,8 @@ export LANG
 PRG=`basename $0`
 PRGBASE=`basename $0 .sh`
 PRGDIR=`dirname $0`
-VERSION="0.99.2"
-LAST_UPD="25-03-2012"
+VERSION="1.01"
+LAST_UPD="25-06-2017"
 
 COL_YELLOW="\033[1;33m";    COLESC_YELLOW=`echo -en "$COL_YELLOW"`
 COL_BROWN="\033[0;33m";     COLESC_BROWN=`echo -en  "$COL_BROWN"`
@@ -41,11 +41,7 @@ LOGDIR="/var/log"
 LOGFILE="${LOGDIR}/${PRGBASE}.log"
 LOGFILEXT="${LOGDIR}/${PRGBASE}-ext-${OGGI}.log"
 
-
-# declare -a sms_errors=('child procs already',"lerrore di stocazzo")  #Per ora solo uno
-Recipients="<gabriele.zappi@acantho.net>,<gabriele.zappi@comune.rimini.it>"
-declare -a mat_escluse=("M01234" "M19099")  # array di matricole escluse
-
+# declare -a sms_errors=('child procs already',"lerrore di stoc..zo")  #
 
 ### Comandi
 TAR=`type -p tar`
@@ -219,8 +215,8 @@ function valuta_parametri() {
 # scansione_1.sh
 
 # Si raccoglie la stringa generata da getopt.
-# STRINGA_ARGOMENTI=`getopt -o aB:c:: -l a-lunga,b-lunga:,c-lunga:: -- "$@"`
-STRINGA_ARGOMENTI=`getopt -o hB:Sfy -l help,repo-dir:,repobase-directory:,simulate,fdupes,yes -- "$@"`
+# STRINGA_ARGOMENTI=`getopt -o hB:Sfy -l help,repo-dir:,repobase-directory:,simulate,fdupes,yes -- "$@"`
+STRINGA_ARGOMENTI=`getopt -o h -l help -- "$@"`
 
 
 # Inizializzazione parametri di default
@@ -233,55 +229,18 @@ ANS_YES=""
 eval set -- "$STRINGA_ARGOMENTI"
 
 while true ; do
-#		echo "Param = $1" # debug
     case "$1" in
-#        -a|--a-lunga)
-#            echo "Opzione a" # debug
-#            shift
-#            ;;
-	-h|--help)
-			shift
-			help
-			;;
-	-f|--fdupes)
-			shift
-			USE_FDUPES="yes"
-			;;
-	-y|--yes)
-			shift
-			ANS_YES="yes"
-			;;
-        -B|--repo-dir*|--repobase-dir*)
-            # echo "Opzione b, argomento «$2»" # debug
-						[ -z "$2" ] && at_exit 99
-						REPOBASE_DIR="$2"
-            shift 2
+        -h|--help)
+            shift
+            help
             ;;
-#        -c|--c-lunga)
-#            case "$2" in
-#                "") echo "Opzione c, senza argomenti" # debug
-#                    shift 2
-#                    ;;
-#                *)  echo "Opzione c, argomento «$2»" # debug
-#                    shift 2
-#                    ;;
-#            esac
-#            ;;
-				-S|--simulate) 
-						SIMULATE="S"
-						shift
-						;;
-				-N|--no-delete-user*)
-						NODELUSER="S"
-						shift
-						;;
         --) shift
             break
             ;;
         *)  echo "Errore imprevisto!"
             exit 1
             ;;
-        esac
+    esac
 done
 
 # echo "Argomenti rimanenti:" # debug
@@ -295,16 +254,6 @@ do
 #    echo "$i) $a"
     ARG_RESTANTI[$i]="$a"
 done
-
-#ARG_RESTANTI="$@"
-# for argomento in "$@"
-# do
-#     echo "$argomento"
-# done
-
-# [ -z "$ARG_RESTANTI" ] && help "$PRG: ${COL_LTRED}ERRORE${COL_RESET}: pochi parametri!\n" 99
-# [ "${#ARG_RESTANTI[*]}" -eq 0 ] && help "$PRG: ${COL_LTRED}ERRORE${COL_RESET}: pochi parametri!\n" 99
-
 }
 
 
@@ -327,14 +276,9 @@ newparams=""
 for i in `seq 1 ${#ARG_RESTANTI[*]}`
 do
  newparams="$newparams '${ARG_RESTANTI[$i]}'"
-# echo "Ciclo $i) ARG_RESTANTI[$i] = ${ARG_RESTANTI[$i]} "
 done
-#echo "\$newparams = $newparams"
 
-# set -- "${ARG_RESTANTI[*]}"
-# set -- "$(for i in `seq 1 ${#ARG_RESTANTI[*]}`;do echo "${ARG_RESTANTI[$i]}"; done)"
 eval "set -- $newparams"
-# Ora li valuto normalmente come $1, $2, ... $n
 
 ### Da usare nel caso si vogliano imporre argomenti
 # if [ -z "$1" ]; then
@@ -343,21 +287,13 @@ eval "set -- $newparams"
 #fi
 #-- Valutazione dei parametri (argomenti - e --) e elborazione restanti - fine
 
-## sino "Proseguo con l'elaborazione?" "N"
-## if [ $SINO = "S" ]; then
-## :
-## else
-## at_exit 99
-## fi
-## echo
-
 /usr/bin/VBoxManage list vms | sed "s/\" /\"|/" | sed "s/$/|/" > "$TMP1"
 /usr/bin/VBoxManage list runningvms | sed "s/\" /\"|/" > "$TMP2"
 
 declare -a vmids
 declare -a vmnames
 
-echo "VIRTUAL MACHINES AVAILABLE :"
+echo "AVAILABLE VIRTUAL MACHINES :"
 echo "============================"
 c=0
 while read -r line
@@ -372,8 +308,8 @@ do
     else
         vmids[$c]="$vmid"
         vmnames[$c]="$vmname"
-        ((c=$c+1))
-        printf " %3d)" $c
+        # ((c++))
+        printf " %3d)" $((++c))
     fi
 
     # echo " $c) | ${vmname} | ${vmid} | ${vmstatus} "
@@ -404,37 +340,34 @@ fi
 vmnum=$((NUMBER-1))
 echo "RUNNING MACHINE "${vmnames[$vmnum]}" ..."
 
+eval vm=${vmnames[$vmnum]}
 
 # echo -n "press a key... "; read a
 
 # VBoxManage startvm "$vm" --type headless
 /usr/bin/VBoxHeadless --startvm ${vmids[$vmnum]} &
 
+TIME2WAIT=60
 echo
-echo -n "Waiting 40 seconds for the network to come up, so I can retrive IP ... "
-sleep 40
+echo -n "Waiting $TIME2WAIT seconds for the network to come up, so I can retrive IP ... "
+sleep $TIME2WAIT
 echo
 echo
 
-# Provato a conoscere l'ip nei seguenti modi: 
-#  VBoxManage --nologo guestcontrol "openSuSE 11.3 64bit" execute --image "/sbin/ifconfig"  --username user --password password --wait-exit --wait-stdout -- -a
-# VBoxManage list bridgedifs
-# ....
-
-givenIP=`VBoxManage guestproperty enumerate ${vmnames[$vmnum]} | grep -o "Net.*IP.*value: [0-9\.]*" | cut -f2 -d ":" | sed "s/^\s*//" | sed "s/\s*$//"`
+property=`VBoxManage guestproperty enumerate "$vm" | grep -io "/.*Net.*v4.*Ip"`
+givenIP=$(VBoxManage guestproperty get "$vm" "$property" | cut -f2 -d":")
 
 if [ -n "$givenIP" ]; then
-	echo -e "\n IP Attribuito alla VM \"$vm\" = $givenIP \n"
+	echo -e " IP assigned to VM \"$vm\" = $givenIP \n"
 	retval=0
 else
-	echo -e "\n WARNING: Non rilevo IP della VM \"$vm\". Probabilmente non sono"
-	echo -e "installate le ultime Guest Addons di Virtual Box nella VM\n"
+#	echo -e " WARNING: Non rilevo IP della VM "$vm". Probabilmente non sono"
+#	echo -e "installate le ultime Guest Addons di Virtual Box nella VM\n"
+	echo -e " WARNING: Can't detect IP of VM "$vm". Maybe last VBox Guest"
+	echo -e "Addons have not been installed ...\n"
   retval=1
 fi
 
 at_exit $retval
-
-
-
 
 # ex: nohls ts=4 sts=4 sw=4 et mouse-=a
