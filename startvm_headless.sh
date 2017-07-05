@@ -349,13 +349,31 @@ eval vm=${vmnames[$vmnum]}
 
 TIME2WAIT=60
 echo
-echo -n "Waiting $TIME2WAIT seconds for the network to come up, so I can retrive IP ... "
-sleep $TIME2WAIT
+echo -n "Waiting max $TIME2WAIT seconds for the network to come up, so I can retrive IP ... "
+# sleep $TIME2WAIT
 echo
 echo
 
-property=`VBoxManage guestproperty enumerate "$vm" | grep -io "/.*Net.*v4.*Ip"`
-givenIP=$(VBoxManage guestproperty get "$vm" "$property" | cut -f2 -d":")
+secwaited=0
+while true
+do
+    property=`VBoxManage guestproperty enumerate "$vm" 2>/dev/null | grep -io "/.*Net.*v4.*Ip"`
+    res=$?
+    if [ $res -eq 0 ]; then
+        givenIP=$(VBoxManage guestproperty get "$vm" "$property" 2>/dev/null | cut -f2 -d":" | tr -d '[:space:]')
+        res=$?
+        if [[ "$givenIP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo -n " $secwaited seconds."
+            break
+        fi
+    fi
+    ((secwaited+=4))
+    [ $secwaited -ge $TIME2WAIT ] && break
+    echo -n "...."
+    sleep 4
+done
+echo
+
 
 if [ -n "$givenIP" ]; then
 	echo -e " IP assigned to VM \"$vm\" = $givenIP \n"
