@@ -367,6 +367,12 @@ do
             break
         fi
     fi
+    # The first time I wait 2 secs before displaying something ...
+    if [ $secwaited -eq 0 ]; then
+        sleep 2
+        ((secwaited+=2))
+        echo -n ".."
+    fi
     ((secwaited+=4))
     [ $secwaited -ge $TIME2WAIT ] && break
     echo -n "...."
