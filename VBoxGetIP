@@ -458,10 +458,20 @@ do
 	vmname="${vms[$scelta]}"
 done
 
-# VBoxManage guestproperty enumerate <vmname>"
-property=`VBoxManage guestproperty enumerate "$vmname" | grep -io "/.*Net.*v4.*Ip"`
-# .... es .... VBoxManage guestproperty get <vmname> "/VirtualBox/GuestInfo/Net/0/V4/IP"
-# VBoxManage guestproperty get "$vmname"  "/VirtualBox/GuestInfo/Net/0/V4/IP"
-VBoxManage guestproperty get "$vmname"  "$property"
+IP=`VBoxManage guestproperty enumerate "$vmname" | grep "Net\/1\/V4\/IP" | grep -o "value: [^,]*" | cut -f2 -d":" | tr -d [:blank:]`
+
+if [ -n "$IP" ]; then
+	echo "$vmname IP is $IP"
+else
+	# VBoxManage guestproperty enumerate <vmname>"
+	property=`VBoxManage guestproperty enumerate "$vmname" | grep -io "/.*Net.*v4.*Ip" | tr -d [:blank:]`
+  if [ -z "$property" ]; then
+		echo "Sorry, IP cannot be determined for VM ${vmname}."
+		echo "Maybe Virtualbox Guest Addons not installed?"
+	fi
+	# .... es .... VBoxManage guestproperty get <vmname> "/VirtualBox/GuestInfo/Net/0/V4/IP"
+	# VBoxManage guestproperty get "$vmname"  "/VirtualBox/GuestInfo/Net/0/V4/IP"
+	VBoxManage guestproperty get "$vmname"  "$property"
+fi
 
 graceful_exit
